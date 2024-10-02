@@ -12,14 +12,26 @@ scrape_configs:
 
   - job_name: syslog
     syslog:
-      listen_address: 0.0.0.0:50514
+      listen_address: 0.0.0.0:3001
       idle_timeout: 60s
       label_structured_data: yes
       labels:
-        job: "syslog"
+        job: syslog
     relabel_configs:
       - source_labels: ['__syslog_message_hostname']
         target_label: 'host'
+
+  - job_name: syslog_evb
+    syslog:
+      listen_address: 0.0.0.0:514
+      idle_timeout: 60s
+      use_incoming_timestamp: true
+      label_structured_data: yes
+      labels:
+        job: syslog_evb
+    relabel_configs:
+      - source_labels: ['__syslog_message_hostname']
+        target_label: host
 
   - job_name: system
     static_configs:
@@ -29,38 +41,38 @@ scrape_configs:
           job: varlogs
           __path__: /var/log/*log
 
-  - job_name: DIAG-455
-    pipeline_stages:
-    - drop:
-        expression: '==>.*'
-    # # - match:
-    # #     selector:
-    # #     stages:
-    - regex:
-        # expression: '^(?P<timestamp>\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})'
-        # long_expr: '^(?P<time>[A-Za-z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})\\|^.*(?P<stationID>EVB-[0-9]{3}-[0-9]{3}-[0-9]{3})\\|^(?<dbg_level>(?<=\s)((([A-Za-z0-9]+)\.([A-Za-z0-9]+))))\\|^(?<daemon>(?<=\s)[\w]+(?=\:))'
-        expression: '^(?P<timestamp>\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<stationID>EVB-\d{3}-\d{3}-\d{3})\s+(?P<facility>\w+)\.(?P<dbg_level>\w+)\s+(?P<daemon>[\w-]+)(?:\[(?P<processID>\d+)\])?:'
-    - timestamp:
-        source: timestamp
-        format: Jan 2 15:04:05
-    - labels:
-        time:
-        stationID:
-        daemon:
-        facility:
-        dbg_level:
-        processID:
-    static_configs:
-      - targets:
-        - localhost
-        labels:
-          job: EVB-510-053-180-logfile
-          stationID:
-          daemon:
-          facility:
-          dbg_level:
-          processID:
-          __path__: /mnt/EVB-510-053-180.txt
+  # - job_name: DIAG-455
+  #   pipeline_stages:
+  #   - drop:
+  #       expression: '==>.*'
+  #   # # - match:
+  #   # #     selector:
+  #   # #     stages:
+  #   - regex:
+  #       # expression: '^(?P<timestamp>\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})'
+  #       # long_expr: '^(?P<time>[A-Za-z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})\\|^.*(?P<stationID>EVB-[0-9]{3}-[0-9]{3}-[0-9]{3})\\|^(?<dbg_level>(?<=\s)((([A-Za-z0-9]+)\.([A-Za-z0-9]+))))\\|^(?<daemon>(?<=\s)[\w]+(?=\:))'
+  #       expression: '^(?P<timestamp>\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(?P<stationID>EVB-\d{3}-\d{3}-\d{3})\s+(?P<facility>\w+)\.(?P<dbg_level>\w+)\s+(?P<daemon>[\w-]+)(?:\[(?P<processID>\d+)\])?:'
+  #   - timestamp:
+  #       source: timestamp
+  #       format: Jan 2 15:04:05
+  #   - labels:
+  #       time:
+  #       stationID:
+  #       daemon:
+  #       facility:
+  #       dbg_level:
+  #       processID:
+  #   static_configs:
+  #     - targets:
+  #       - localhost
+  #       labels:
+  #         job: EVB-510-053-180-logfile
+  #         stationID:
+  #         daemon:
+  #         facility:
+  #         dbg_level:
+  #         processID:
+  #         __path__: /mnt/EVB-510-053-180.txt
     # timestamp extraction
     # - match:
     #     selector: '{name="EVB-510-053-180-logfile"}'
