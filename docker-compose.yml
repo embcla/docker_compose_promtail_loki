@@ -1,6 +1,7 @@
 networks:
   loki:
 
+
 services:
   loki:
     image: grafana/loki:3.2.0
@@ -13,7 +14,7 @@ services:
     networks:
       - loki
     healthcheck:
-      test: wget --quiet --tries=1 --output-document=- http://localhost:3100/ready | grep -q -w ready || exit 1
+      test: ["CMD-SHELL", wget --quiet --tries=1 --output-document=- http://loki:3100/ready | grep -q -w ready || exit 1]
       start_period: 20s
       interval: 10s
       timeout: 1s
@@ -21,6 +22,10 @@ services:
 
   promtail:
     image: grafana/promtail:3.2.0
+    ports:
+      - "514:514"
+      - "3001:3001"
+      - "3002:3002"
     volumes:
       - ./promtail/promtail-config.yaml:/etc/promtail/config.yml
       - /var/log:/var/log:ro
@@ -33,6 +38,12 @@ services:
     depends_on:
       loki:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9080/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   grafana:
     image: grafana/grafana:latest
@@ -42,8 +53,14 @@ services:
     networks:
       - loki
     depends_on:
-      - loki
-      - promtail
+      loki:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
 volumes:
   loki_data:
